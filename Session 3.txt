@@ -1,0 +1,104 @@
+Note: findOneAndReplace() (similar with patch in API)
+
+
+==>It updates the sending values ( if there is any key, you did not put in the update it will be deleted)
+==>findOneAndReplace() updates just a single document which is the first.
+==>If you do not assign values to some keys they will be removed from the document
+==>When you execute this method on VSVode, it will display the un-changed document on the terminal
+==>The methods name is "findOneAndReplace()" , because of that it replaces just the firt document
+
+
+Note: findOneAndUpdate() (similar with patch in API)
+==> It updates the sending values.
+==> If you do not assign values to some keys they will not be touched in the document.
+==> When you execute this method in VSCode it will print the un-changed document on the terminal.
+==> Do not forget atomic operators ($).
+
+1) Find the documents whose price is equal to 500 and 
+replace the product_name for "Computer" and 550 for price.
+
+db.prices.findOneAndReplace({price:{$eq:500}}, {"product_name":"Computer","price":550});
+
+2) Find the documents whose prices are greater than 700 and change their name to "Expensive"
+
+db.prices.findOneAndReplace({price:{$gt:700}}, {"product_name":"Expensive"});
+
+3)Find the documents whose prices is less pr equal than 650 and change their name to "fair price".
+
+   db.prices.findOneAndReplace({price:{$lte:650}}, {"product_name":"Fair price"});
+
+4)(Using findOneAndUpdate) Find the document whose price is 600 and update the tax incrementing by 14
+  db.prices.findOneAndUpdate({price:{$eq:600}}, {$inc:{"tax":14}}, {returnNewDocument:true});
+  db.prices.findOneAndUpdate({price:{$eq:600}}, {"tax":14});
+
+Note: $inc the incrementing atamic operators which is like addtion
+Note: adding {returnNewDocument:true} at the end of the query either by using findOneAndReplace
+
+   db.prices.findOneAndReplace({price:{$eq:500}}, {"product_name":"pc", "price":550},{returnNewDocument:true});
+
+5)Find the documents whose price is 800 and update their name to "Expensive"
+
+  db.prices.findOneAndUpdate({price:{$eq:800}},{$set:{"product_name":"Expensive"}}, {returnNewDocument:true});
+
+  Note:the $ set updates the filtered value and the toher keys remain untouched
+
+
+6)Update the name of the documents which have a tax less than or equal to 10 to "low tax"
+
+    db.prices.findOneAndUpdate({tax:{$lte:10}},{$set:{"product_name":"Low tax"}}, {returnNewDocument:true});
+
+Note: "upsert:true" creates the document if it does not exist when you see findOneAndReplace() or findOneAndUpdate
+
+7)  Update the tax of the document which has a price of 500 to 11.
+
+    db.prices.findOneAndReplace({"price":500},{"tax":11},{upsert:true,returnNewDocument:true});
+
+
+             How to update multiple documents
+
+==>update() -->If you do not use {multi:true} it will update just the first document
+            -->If you use {multi:true} it will update all matching records.
+
+8) Update the name  of the document which price is greater or equal to 650
+to "Too High"
+db.prices.update({price:{$gte:650}}, {$set:{"product_name":"too high"}}, {multi:true , returnNewDocument:true});
+
+==>updateOne() --> it will update just the first document
+
+9) update tax for document with price 800 to 8
+
+ db.prices.updateOne({price:800}, {$set:{"tax": 8}});
+
+
+ ==>updateMany()-->It will update all the matched documents
+
+ 10) update the name of the document that has a price of 700, 800, 900 to "updated"
+ db.prices.updateMany({prices:{$in:[700,800,900]}}, {$set:{"product_name":"updated"}});
+
+ 
+              How to Delete a document ==>deleteOne(), deleteMany(), remove()
+
+Note:if you ask to delete non existing document, it will not give any error, it will return 0 were elements deleted
+
+11) Delete using  deleteOne() method the document that has name of "TV"
+
+   db.prices.deleteOne({product_name:"TV"});
+
+12) Delete using deleteMany() method the document that has name of "too high"
+
+  db.prices.deleteMany({product_name:"too high"});
+
+13)  Delete using remove () method the document that has name of "Laptop"
+
+    db.prices.remove({"product_name":"Laptop"});
+
+Note: deleteMany () and remove() have the same functionality just with difffernt returns on the terminal
+
+
+
+ 
+ 
+
+
+
+

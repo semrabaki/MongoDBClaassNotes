@@ -1,0 +1,81 @@
+First go to TErminal and click on new terminal and write mongo and make sure the powershell swicthed 
+to the mongo on the right side
+
+1)How to create DB
+   use invertory (yaz bunu mongo terminale)==>swicthed to db inventory
+
+2) How to see which DB are you in
+
+   >bd==>
+
+3) How to see all DBs on terminal
+   show dbs ==>admin   0.000GB
+                config  0.000GB
+                local   0.000GB
+
+    Note: without adding any collection to the database, it will not be visiable neither ot VScode
+
+4)How to add a collection into a DB
+  
+   db.createCollection("products");==>{ "ok" : 1 }
+
+5)How to drop a collection
+
+  db.products.drop();==>true
+
+6)How to drop DB
+
+  db.dropDatabase(); ==>{ "ok" : 1 } This drops the database we are in
+
+
+  Note:Create "products" database and create "prices" Collection inside the database
+
+7) How to insert single Document into a Collection
+
+   db.prices.insertOne({"product_name":"Laptop","price": 800, "tax":32})
+                      ||
+                      || the output below
+         {
+        "acknowledged" : true,
+        "insertedId" : ObjectId("61db328a6724d50b28f4b74f")
+        }
+
+8) How to insert multiple documents
+  
+   db.prices.insertMany([{"product_name":"Laptop","price": 800, "tax":32},
+                          {"product_name":"TV","price+tax": 345}]);
+
+    Note:Do not forget the brackets when you use insertMany()==>[]
+
+9)How to insert a single or many documents into a collection
+
+    db.electronic.insert({"name":"iron", "tax":12}); ==> WriteResult({ "nInserted" : 1 })   one document inserted
+    db.electronic.insert([{"name":"iron", "tax":12}, {"name":"radio","tax":8}]);
+
+                       ||
+                       ||
+
+                            BulkWriteResult({
+                "writeErrors" : [ ],
+                "writeConcernErrors" : [ ],
+                "nInserted" : 2,
+                "nUpserted" : 0,
+                "nMatched" : 0,
+                "nModified" : 0,
+                "nRemoved" : 0,
+                "upserted" : [ ]})
+
+    Note:Being more precise is better in these 2 methods
+
+10)How to create more indexes=How to make any key as Primary key
+
+   db.prices.ensureIndex({"product_name":1});
+
+   This methods is used to remove duplicates and repetitons and make the index primary key.
+
+
+                      How to read documents in MongoDB
+11)How to fetch documents from a collection
+ 
+      db.prices.find()==> it fetched All documents
+      db.prices.find().pretty();

@@ -1,0 +1,129 @@
+How to read documents in MongoDB
+
+
+1)How to fetch documents from a collection
+
+     db.prices.find();==> it fetches  all documents inside the collection
+     db.prices.find().pretty();==> it fetches  all documents inside in JSON pretty format
+
+
+note:read 2 documents
+
+2)How to read limited number of Documents
+
+   db.prices.find().pretty().limit(2);  ==> only lists first 2 documents
+
+3) How to read only the 3rd document
+
+    db.prices.find().pretty().skip(2).limit(1);
+
+4) How to read documents whose names are "laptop"
+
+     db.prices.find({"product_name":"Laptop"}).pretty();
+
+Conditions:
+
+5) How to read documents whose name is "Laptop"AND price is 600
+
+
+      db.prices.find({$and:[{"product_name": "Laptop"},{"price":600}]}).pretty();
+
+
+ 6) How to read documents whose name is "Laptop" OR "TV"
+
+     db.prices.find({$or:[{"product_name":"TV"},{"product_name": "Laptop"}]}).pretty(); 
+(
+7) How to read just prices of the "Laptop"
+
+   db.prices.find({"product_name": "Laptop"}, {"price":1,"_id":0}).pretty(); ==> { "price" : 600 }
+                                                                                { "price" : 800 }
+
+   db.prices.find({"product_name": "Laptop"}, {"price":1,"_id":1}).pretty();  ==> it prints id and price
+
+    db.prices.find({"product_name": "Laptop"}, {"price":0,"_id":1}).pretty(); ==> when it is 
+    id it displays everything but not price bucause you put 0 for it. 
+
+    db.prices.find({"product_name": "Laptop"}, {"price":1}).pretty();==> it shos ids and prices
+
+8)How to read just price and tax of  the "Laptop"
+
+db.prices.find({"product_name":"Laptop"},{"price":1,"tax":1,"_id":0}).pretty();
+
+
+9)How to read the first document only
+
+  a)   db.prices.find().pretty().limit(1);
+
+  b) db.prices.findOne();
+
+
+10)How to read"Laptop" in ascending order by price
+
+    db.prices.find({"product_name":"Laptop"},{"price":1,"_id":0}).sort({"price":1});
+
+11)How to read"Laptop" in decending order by price
+  
+    db.prices.find({"product_name":"Laptop"},{"price":1,"_id":0}).sort({"price":-1});
+
+
+                 Camparison Operators
+
+12) Fetch documents whose price are equal to 600
+
+    a) db.prices.find({"price":600}).pretty();
+    b) db.prices.find({price:{$eq:600}}).pretty();
+
+13) Fetch document whose prices are less than or equal to 800
+
+    db.prices.find({price:{$lte:800}}).pretty();
+
+    13.1)SAme task in ascending order
+
+    db.prices.find({price:{$lte:800}}).sort({price:1}).pretty();
+
+14) Fetch documents whose prices are greater than 700
+
+   db.prices.find({price:{$gt:700}}).pretty();
+
+   14.1)SAme task in decending order
+
+   db.prices.find({price:{$gt:700}}).sort({price:-1}).pretty();
+
+15)Fetch documents whose prices are one of the 500, 600, 700
+
+   db.prices.find({price:{$in:[500,600,700]}}).pretty();
+
+16)Fetch dousment whose prices are not one of the 500, 600, 700
+
+  db.prices.find({price:{$nin:[500,600,700]}}).pretty();
+
+
+Note: in API we have the put and the patch methods:
+
+    they both update; put fully updates all ther ecord; patch partiallu updated single key insertMany
+
+Note: findOneAndReplace() (similar with patch in API)
+
+
+==>It updates the sending values ( if there is any key, you did not put in the update it will be deleted)
+==>findOneAndReplace() updates just a single document which is the first.
+==>If you do not assign values to some keys they will be removed from the document
+==>When you execute this method on VSVode, it will display the un-changed document on the terminal
+==>The methods name is "findOneAndReplace()" , because of that it replaces just the firt document
+
+
+Note: findOneAndUpdate() (similar with patch in API)
+==> It updates the sending values.
+==> If you do not assign values to some keys they will not be touched in the document.
+==> When you execute this method in VSCode it will print the un-changed document on the terminal.
+==> Do not forget atomic operators ($).
+
+17) Find the documents whose price is equal to 500 and 
+replace the product_name for "Computer" and 550 for price.
+
+db.prices.findOneAndReplace({price:{$eq:500}}, {"product_name":"Computer","price":550});
+
+18) Find the documents whose prices are greater than 700 and change their name to "Expensive"
+
+db.prices.findOneAndReplace({price:{$gt:700}}, {"product_name":"Expensive"});
+
