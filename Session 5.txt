@@ -1,0 +1,159 @@
+How to create a copy of a collection in MongoDB
+1) Create a copy of accounting collection in database with a new name (accountingCopy)
+//1. Style
+var pipeline = [{$merge:{into:"accountingCopy"}}]
+db.accounting.aggregate(pipeline);
+Note: in this method no message will be displayed on the terminal but on compass we will see the new copy.
+Note: this method will perform a full merge (with the ids)
+Note: to perform this operation we use aggregate, in the first step we use $merge with into to create our new copy,
+        then we perform aggregate with the main one.
+//2. Style
+Note: if you want to create new "_id"s for copied document, you should type "{$project:{_id:0}}"
+        inside the pipeline. Otherwise, MongoDB will use the same "_id"s for the copied document.
+var pipeline = [{$project:{_id:0}} , {$merge:{into:"accountingCopyIndexed"}}]
+db.accounting.aggregate(pipeline);
+Note: order counts, merge should be the last thing to use in the query.
+Note: create a new collection named "stories" inside inventory, then insert documents:
+db.stories.insertMany(
+    [
+        {"author":"dave" , "score":75 , "views":200},
+        {"author":"chris" , "score":90 , "views":100},
+        {"author":"dave" , "score":35 , "views":3000},
+        {"author":"mary" , "score":80 , "views":350},
+        {"author":"dave" , "score":54 , "views":333},
+        {"author":"mary" , "score":97 , "views":2000}
+    ]
+);
+2) List all story author names
+//1.Way: Not recommended because there is repetition
+db.stories.aggregate([{$project:{score:0 , views:0, _id:0}}]);
+//2.Way: Recommended use distinct()
+Note: distinct comes in the place of aggregate
+db.stories.distinct("author");
+3) Find the number of stories dave and mary wrote seperately.
+//1.Way: Not Recommended
+db.stories.aggregate([{$match:{author:"dave"}} , {$count:"Dave"}]);
+db.stories.aggregate([{$match:{author:"mary"}} , {$count:"Mary"}]);
+//2.Way: Use $facet()
+var pipeline = [{$facet:{
+                            "DaveStories":[{$match:{author:"dave"}} , {$count:"Dave"}],
+                            "MaryStories":[{$match:{author:"mary"}} , {$count:"Mary"}]
+}},
+                {$project:{
+                            "DaveStories":{$arrayElemAt:["$DaveStories.Dave",0]},
+                            "MaryStories":{$arrayElemAt:["$MaryStories.Mary",0]}
+                }}
+];
+db.stories.aggregate(pipeline);
+Note: The usage of facet allows the performance of multi-aggregations from different dimensions. It places the results inside arrays.
+                How to do multiple commands in a single method
+4) a)Insert ("author":"mark" , "score":55 , "views":555).
+   b)Update dave's score to 55
+   c)Replace {"author":"christian" , "score":55} for {"author":"chris" , "score":90 , "views":100}\
+   d)Delete the document whose author is "mary"
+db.stories.bulkWrite([
+                        {insertOne:{"document":{"author":"mark" , "score":55 , "views":555}}},
+                        {updateOne:{"filter":{author:"dave"} , "update":{$set:{score:55}}}},
+                        {replaceOne:{"filter":{"author":"chris"} , "replacement":{"author":"christian","score":55}}},
+                        {deleteOne:{"filter":{"author":"mary"}}}
+]);
+Note: bulkWrite allows us to use multiple commands inside one method.
+Note: inside bulkWrite(), you can only use:
+                                            insertOne
+                                            updateOne
+                                            updateMany
+                                            deleteOne
+                                            deleteMany
+                                            replaceOne
+
+
+                                           
+                                           
+                                    
+                                    How to fetch data from 2 different collections
+
+Note: we are using "stories" and collection "articles"
+
+5) Display all documents from both of the collections, sort the documents according to the views (Full Join)
+
+   db.articles.aggregate([
+       {$unionWith:{coll:"stories"}},
+       {$project:{_id:0}},
+       {$sort:{views:1}}
+   ]);
+
+Note: to fetch data from 2 collections we us $unionWith
+Note: the difference between $unionWith and $merge is that $unionWith is for fetching/displaying
+      $merge is to create a new empty collection and fill it with the documents od the old collection
+
+
+6)Display the sum of article views and story views for every author
+
+db.articles.aggregate([
+        {$unionWith:{coll:"stories"}},
+        {$group:{_id:"$author",totalViews:{$sum:"$views"}}},
+        {$sort:{totalViews:-1}}
+    ]);
+
+7)Display of minumum of article views and scores for every author (FULL JOIN)
+
+db.articles.aggregate([
+        {$unionWith:{coll:"stories"}},
+        {$group:{_id:"$author",minViews:{$min:"$views"}}},
+        {$sort:{minViews:-1}}
+    ]);
+
+
+Note: the presence of $ inside _id means that the value of every author will be checked,
+      if author was without $ sign( atomic sign) means that we are referring to author as so it
+      will display one result which is the least
+
+
+Note: Create an "articlesTest1" collection inside inventory and insert the following documents 
+db.articlesTest1.insertMany(
+    [
+        {"author":"dave" , "score":80 , "views":100},
+        {"author":"leo" , "score":85 , "views":521},
+        {"author":"tom" , "score":60 , "views":1000},
+        {"author":"john" , "score":55 , "views":5000},
+        {"author":"mary" , "score":60 , "views":50},
+        {"author":"ali" , "score":94 , "views":999},
+    ]
+)
+
+Note: Create an "storiesTest1" collection inside inventory and insert the following documents
+db.storiesTest2.insertMany(
+    [
+        {"author":"dave" , "score":75 , "views":200},
+        {"author":"chris" , "score":90 , "views":100},
+        {"author":"ali" , "score":35 , "views":3000},
+        {"author":"mary" , "score":80 , "views":350},
+        {"author":"veli" , "score":54 , "views":333},
+        {"author":"ocean" , "score":97 , "views":2000}
+    ]
+);
+
+
+8)Display common authors from both of the document with total scores and total views
+
+db.articlesTest1.aggregate([
+        {$lookup:{
+                    from:"storiesTest2",
+                    localField:"author",
+                    foreignField:"author",
+                    as: "commons"
+        }},
+        {
+            $unwind:"$commons"
+        },
+        {$project:{
+                    totalScores:{$add:["$score" , "$commons.score"]},
+                    totalViews:{$add:["$views" , "$commons.views"]},
+                    _id:0 , author:1
+        }}
+    ]);
+
+
+
+
+
