@@ -1,8 +1,11 @@
-How to create a copy of a collection in MongoDB
+                How to create a copy of a collection in MongoDB
+
 1) Create a copy of accounting collection in database with a new name (accountingCopy)
+
 //1. Style
 var pipeline = [{$merge:{into:"accountingCopy"}}]
 db.accounting.aggregate(pipeline);
+
 Note: in this method no message will be displayed on the terminal but on compass we will see the new copy.
 Note: this method will perform a full merge (with the ids)
 Note: to perform this operation we use aggregate, in the first step we use $merge with into to create our new copy,
@@ -10,10 +13,13 @@ Note: to perform this operation we use aggregate, in the first step we use $merg
 //2. Style
 Note: if you want to create new "_id"s for copied document, you should type "{$project:{_id:0}}"
         inside the pipeline. Otherwise, MongoDB will use the same "_id"s for the copied document.
+
 var pipeline = [{$project:{_id:0}} , {$merge:{into:"accountingCopyIndexed"}}]
-db.accounting.aggregate(pipeline);
-Note: order counts, merge should be the last thing to use in the query.
+db.accounting.aggregate(pipeline);   // we started with project because the first thing will appear is _ids
+
+Note: order of the query counts, merge should be the last thing to use in the query.
 Note: create a new collection named "stories" inside inventory, then insert documents:
+
 db.stories.insertMany(
     [
         {"author":"dave" , "score":75 , "views":200},
@@ -24,28 +30,34 @@ db.stories.insertMany(
         {"author":"mary" , "score":97 , "views":2000}
     ]
 );
+
 2) List all story author names
+
 //1.Way: Not recommended because there is repetition
-db.stories.aggregate([{$project:{score:0 , views:0, _id:0}}]);
+db.stories.aggregate([{$project:{score:0 , views:0, _id:0}}]);   //fecthing data one by one that is why there is a repitition
+
 //2.Way: Recommended use distinct()
 Note: distinct comes in the place of aggregate
-db.stories.distinct("author");
+db.stories.distinct("author");   //shows each author only once
+
 3) Find the number of stories dave and mary wrote seperately.
 //1.Way: Not Recommended
 db.stories.aggregate([{$match:{author:"dave"}} , {$count:"Dave"}]);
 db.stories.aggregate([{$match:{author:"mary"}} , {$count:"Mary"}]);
-//2.Way: Use $facet()
+//2.Way: Use $facet()   //it puts results in an array
 var pipeline = [{$facet:{
                             "DaveStories":[{$match:{author:"dave"}} , {$count:"Dave"}],
-                            "MaryStories":[{$match:{author:"mary"}} , {$count:"Mary"}]
+                            "MaryStories":[{$match:{author:"mary"}} , {$count:"Mary"}]       //creation of 2 arrays
 }},
                 {$project:{
-                            "DaveStories":{$arrayElemAt:["$DaveStories.Dave",0]},
-                            "MaryStories":{$arrayElemAt:["$MaryStories.Mary",0]}
+                            "DaveStories":{$arrayElemAt:["$DaveStories.Dave",0]},           //we put zero because in this array there is only the count element which is index 0
+                            "MaryStories":{$arrayElemAt:["$MaryStories.Mary",0]}            //projecting over the arrays
+        
                 }}
 ];
 db.stories.aggregate(pipeline);
-Note: The usage of facet allows the performance of multi-aggregations from different dimensions. It places the results inside arrays.
+Note: The usage of facet allows the performance of multi-aggregations from different dimensions. 
+It places the results inside arrays.
                 How to do multiple commands in a single method
 4) a)Insert ("author":"mark" , "score":55 , "views":555).
    b)Update dave's score to 55
@@ -134,22 +146,22 @@ db.storiesTest2.insertMany(
 );
 
 
-8)Display common authors from both of the document with total scores and total views
+8)Display common authors from both of the document with total scores and total views (like inner join)
 
 db.articlesTest1.aggregate([
         {$lookup:{
-                    from:"storiesTest2",
-                    localField:"author",
-                    foreignField:"author",
-                    as: "commons"
+                    from:"storiesTest2",    //source
+                    localField:"author",    //main ref
+                    foreignField:"author",  //target
+                    as: "commons"           //naming purpose
         }},
         {
-            $unwind:"$commons"
+            $unwind:"$commons"                                        //create commons array and put the results
         },
         {$project:{
                     totalScores:{$add:["$score" , "$commons.score"]},
                     totalViews:{$add:["$views" , "$commons.views"]},
-                    _id:0 , author:1
+                    _id:0 , author:1                                        //display purpose we removed id 
         }}
     ]);
 

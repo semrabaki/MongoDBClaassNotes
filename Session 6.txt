@@ -1,0 +1,38 @@
+
+    Note: more details about $lookup query
+
+             ==> the from field indicates the MongoDB collection with which  we are joining
+             ==> the localField specifies the field local to the collection on which we are performing
+             ==>the foreignField  indicates the target feild from the other collection which which we
+             ==>the as pharese will specify the name of our output array in the result
+
+
+    Note: Create "groceries" and "stick" collections in inverntory db and  enter documents
+
+   db.groceries.insertMany([
+    {"id":1 , "item":"cashew" , "qnt":6 , "price":43},
+    {"id":2 , "item":"coockie" , "qnt":4 , "price":54},
+    {"id":3 , "item":"vegetable" , "qnt":5 , "price":24}
+]);
+
+db.stock.insertMany([
+    {"id":1 , "item":"cashew" , "description":"salted cashew" , "isle":43},
+    {"id":2 , "item":"cookie" , "description":"oat and raisin" , "isle":54},
+    {"id":3 , "item":"fruit" , "description":"contains vitamine C" , "isle":34},
+    {"id":4 , "item":"meat" , "description":"contains vitamine D" , "isle":34}
+]);
+
+
+1)Display all details of the items in gorceries document (Left or Right Join)
+db.groceries.aggregate([
+      {$lookup:{
+                    from:"stock",    
+                    localField:"id",    
+                    foreignField:"id", 
+                    as:"fromGroceries" 
+
+        }},
+        {$project:{
+                    _id:0                                    
+        }}
+    ]);
