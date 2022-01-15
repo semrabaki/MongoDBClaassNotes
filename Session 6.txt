@@ -23,16 +23,224 @@ db.stock.insertMany([
 ]);
 
 
-1)Display all details of the items in gorceries document (Left or Right Join)
+1)Display all details of the items in groceries document (Left or Right Join)
 db.groceries.aggregate([
       {$lookup:{
                     from:"stock",    
-                    localField:"id",    
-                    foreignField:"id", 
+                    localField:"item",    
+                    foreignField:"item", 
+
                     as:"fromGroceries" 
 
         }},
         {$project:{
-                    _id:0                                    
+                    _id:0, id:0                            
         }}
     ]);
+
+
+2)Display all details of common items
+
+db.groceries.aggregate([
+        {$lookup:{
+                    from:"stock",    
+                    localField:"item",   
+                    foreignField:"item", 
+                    as: "commons"          
+        }},
+        {
+            $unwind:"$commons"                                       
+        }
+    ]).pretty();
+
+Note:  For full join we use $unionWith
+Note: For left or Right joins we use $lookup
+Note: For Inner Join we use $loopup + $unwind
+
+
+                                 Regular Expression
+
+   4) Find the documents whose description value contains "cO" or "Co" or "CO" or "co" from "stock" collection.
+        
+        Note: according to this task we should ignore cases
+        Note: In MongoDB, to ignore cases you need to use $options:'i'
+    
+    db.stock.find({description:{$regex:"CO" , $options:'i' }}); 
+
+
+    5) Find the documents whose description value starts with "s" or "S" from "stock" collection
+
+     db.stock.find({description:{$regex:/^S/ , $options:'i'}});
+
+
+    6) Find the documents whose description value does not contain "co" from "stock".
+
+    db.stock.find({description:{$regex:'^((?!co).)*$' , $options:'i'}});
+
+    7) Find the documents whose description value ends with "d" or "D" from "stock"
+
+    db.stock.find({description:{$regex:/D$/ , $options:'i'}});
+
+    8) Find the documents whose description value starts with "o" and ends with "n"
+    db.stock.find({description:{$regex:/^o.*N$/ , $options:'i'}});
+   
+   Note: In MongoDB, to check multiple lines you need to use $options:'m'
+   Note: When you want to search over multiple lines and ignore cases, use $options:'mi'
+
+9) Find the documents whose description value contains lines starting with "o" from "stock"
+    db.stock.find({description:{$regex:/^O/ , $options:'mi'}});
+
+Note: When you want to search over multiple lines and you want to ignore the cases in the same 
+time you just put m and i together inside $options.
+
+
+                              Text Index
+
+    It means that we are working over the indexes of every record. 
+
+   Note: Create "stores" collection and insert documents:
+
+        db.stores.insertMany(
+            [
+                {_id:1, name:"Java Hut", description:"Coffee and Cakes"},
+                {_id:2, name:"Burger Buns", description:"Gourmet hamburgers"},
+                {_id:3, name:"Coffee Shop", description:"Just Coffee"},
+                {_id:4, name:"Clothes Clothes Clothes", description:"discount clothing"},
+                {_id:5, name:"Java Shopping", description:"Indonesian goods"}
+            ]
+        );
+
+        Note: to(use) work with text indexes, we have to create "text index" for fields which we want to work on
+       
+        db.stores.createIndex({name:"text" , description:"text"});  //it creates index for each one name and descrition
+      
+      
+        10) Find all stores containing any terms from the list "coffee", "shop" , and "java"
+        
+        Note: $text is case insensitive  
+
+        db.stores.find({$text:{$search:"java coffee shop"}});     
+
+        11)Find all documents containing exact phrase "coffee shop"
+
+        Note: for inner double quotes in $search you need to use \
+       
+       db.stores.find({$text:{$search:"\"coffee shop\""}});      this is for exact pharase search 
+
+       12) Find all stores containing "java" or "shop" but no "coffee"
+     
+      db.stores.find({$text:{$search:"java shop -coffee"}});
+    
+      Notes: - stands for exclude
+      
+      13) Score for each document that specifies how well a document matches the query.
+    
+       The query is searching for "coffee" , "shop" , and "java"  //for each match 0.75 points gives 
+       //score is the naming we decide it. meta stands for meta data it means how much the query matched
+
+        db.stores.find(
+            {$text:{$search:"java shop coffee"}},
+            {score:{$meta:"textScore"}}      
+        );
+14) to sort the results in order or relevance score for each document 
+    db.stores.find(
+            {$text:{$search:"Java shop coffee"}},
+            {score:{$meta:"textScore"}}
+        ).sort({score:{$meta:"textScore"}});
+               
+               
+                RELATIONSHIPS
+1)One to One
+{
+    "Name" : "Ali Can",
+    "Age" : 25,
+    "Address": {
+        "City" : "Pune",
+        "State" : "MA"
+    }
+}
+2)One to Many 
+{
+    "Name" : ["Ali Can" , "Veli Han"],
+    "Age" : 25,
+    "Address": [
+        {
+            "City" : "Miami",
+            "State":"FL"
+        },
+        {
+            "City":"Long Island",
+            "State":"NY"
+        }
+    ]
+}
+3) Referenced Relationship 
+db.addresses.insertMany([
+    {"City":"Miami","State":"FL"},
+    {"City":"Long Island" , "State":"NY"}
+]);
+db.users.insertOne(
+    {"name":"Ali Can" , "age":25 , "phone":"1234567890" , address_id:["60000810fc" , "60000810fd"]}
+);
+15) Find all address ids of Ali Can
+    db.users.find({name:"Ali Can"} , {address_id:1 , _id:0 , name:1});
+16) 
+db.persons.insertMany(
+    [
+        {
+            "_id":"Prsn101",
+            "firstName":"Joe",
+            "lastName":"Mongo",
+            "groups": [
+                "Grp11",
+                "Grp12"
+            ]
+        },
+        {
+            "_id":"Prsn102",
+            "firstName":"Sally",
+            "lastName":"Mongo",
+            "groups":[
+                "Grp11"
+            ]
+        }
+    ]
+);
+db.groups.insertMany([
+    {
+       "_id":"Grp11",
+       "groupName" : "mongoDB User",
+       "persons":[
+           "Prsn101",
+           "Prsn102"
+       ] 
+    },
+    {
+       "_id":"Grp12",
+       "groupName" : "mongoDB Administrator",
+       "persons":[
+           "Prsn101"
+       ] 
+    }
+]);
+17) Get all persons in the "mongoDB User" group 
+db.persons.find(
+    {"groups":"Grp11"},
+    {groups:0}
+);
+18) Get all persons in the "mongoDB Administrator" group 
+db.persons.find(
+    {"groups":"Grp12"},
+    {groups:0}
+);
+19) Get all groups for "Joe Mongo"
+db.groups.find(
+    {"persons":"Prsn101"},
+    {persons:0}
+);
+20) Get all groups for "Sally Mongo"
+db.groups.find(
+    {"persons":"Prsn102"},
+    {persons:0});          
+
+
